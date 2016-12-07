@@ -24,6 +24,30 @@
 
 by group (4,10), (6,8) as pseudo-nodes.
 
+after a deletion, the worst case: 
+ 2,1
+    \
+     5,1
+    /   \
+ 3,1     6,1
+    \       \
+     4,1     7,1
+
+needs skew 2, skew 5, skew 5, split 2, split 4, so recusive functions
+can be expanded as: skew(t), skew(t.right), skew(t.right.right);
+split(t), split(t.right); where 
+skew(root){
+ if horizontal left
+   right rotatation
+ //skew(root->right)
+}
+
+split(root){
+ if consecutive right
+  left rotatation
+  //split(root->right);
+}
+
 */
 struct Node
 {
@@ -55,16 +79,13 @@ void skew(struct Node **a)
     if ((*a)->level != 0) {
 		//remove left horizontal links
         if ((*a)->left->level == (*a)->level) {
-			LOG("at %d:%d\n", (*a)->data, (*a)->level);
+			LOG("at %x->%x:%d\n", (*a)->data, (*a)->left->data, (*a)->level);
 			//right rotate
 			struct Node *b = (*a)->left;
 			(*a)->left = b->right;
 			b->right = *a;
 			*a = b;
         }
-		
-		//continue on right path.
-        skew(&(*a)->right);
     }
 }
 
@@ -72,7 +93,7 @@ void split(struct Node **a)
 {
 	//remove consecutive right horizontal links.
 	if((*a)->level != 0 && (*a)->right->right->level == (*a)->level){
-		LOG("at %d:%d\n", (*a)->data, (*a)->level);
+		LOG("at %x->%x->%x:%d\n", (*a)->data, (*a)->right->data, (*a)->right->right->data, (*a)->level);
 		//left rotate
 		struct Node *b = (*a)->right;
 		(*a)->right = b->left;
@@ -80,9 +101,6 @@ void split(struct Node **a)
 		*a = b;
 		
 		(*a)->level++; //increase level
-
-		//continue on right path
-		split(&(*a)->right);
 	}
 }
 
@@ -104,20 +122,6 @@ void insert(struct Node **root, int data)
 }
 
 
-/*worst case needs: 
- 2,1
-    \
-     5,1
-    /   \
- 3,1     6,1
-    \       \
-     4,1     7,1
-
-skew 2, skew 5, skew 5, split 2, split 4.
-
-3 skews + 2 splits
-
-*/
 void delete(struct Node **root, int data)
 {
     if ((*root) != nil) {
@@ -165,7 +169,10 @@ void delete(struct Node **root, int data)
         }
 
         skew(root);
+		skew(&(*root)->right);
+		skew(&(*root)->right->right);
         split(root);
+		split(&(*root)->right);
     }
 }
 
@@ -198,7 +205,7 @@ void delete_iter(struct Node **root, int data)
     if (it->left == nil || it->right == nil){
 
         if (--top != 0){
-			struct Node **link = (up[top-1]->left == it) ? &up[top-1]->left : up[top-1]->right;
+			struct Node **link = (up[top-1]->left == it) ? &up[top-1]->left : &up[top-1]->right;
 			if(it->left != nil){
 				*link = it->left;
 			}else{
@@ -237,7 +244,10 @@ void delete_iter(struct Node **root, int data)
             }
 
             skew(&up[top]);
+			skew(&up[top]->right);
+			skew(&up[top]->right->right);
             split(&up[top]);
+			split(&up[top]->right);
         }
 
         if (top == 0){
@@ -291,20 +301,19 @@ int test_aatree()
 	traverse(root, 0);
 
 	for(i = 1; i <= 6; ++i){
-		printf("begin rm %d:\n", i);
+		LOG("begin rm %d:\n", i);
 		//delete(&root, i);
 		delete_iter(&root, i);
 		
-		printf("after rm %d:\n", i);
+		LOG("after rm %d:\n", i);
 		traverse(root, 0);
 	}
 
 	//destroy(&root);
-	//printf("====end:\n");
+	//LOG("====end:\n");
 	//traverse(root, 0);
 
 	
 	return 0;
 }
 #endif
-

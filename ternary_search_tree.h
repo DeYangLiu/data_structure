@@ -22,8 +22,10 @@ struct TraverseCtx{
 void tree_insert(struct Node** root, node_key_t *keys, int num, void *val);
 void* tree_search(struct Node *root, node_key_t *keys, int num);
 int tree_delete(struct Node **root, node_key_t *keys, int num, int flag, FreeFn fn);
-void tree_traverse(struct Node* root, node_key_t *keys, int num, 
+int tree_traverse(struct Node* root, node_key_t *keys, int num, 
 		struct TraverseCtx *ctx);
+
+struct Node *tree_nil(void);
 
 typedef int (*CompareFn)(void *from, void *to);
 
